@@ -78,12 +78,12 @@ const adminNavItems = [
   //   icon: Wifi,
   //   description: 'Manage VTU API providers',
   // },
-  {
-    name: 'Networks',
-    href: '/admin/networks',
-    icon: Wifi,
-    description: 'Manage supported networks',
-  },
+  // {
+  //   name: 'Networks',
+  //   href: '/admin/networks',
+  //   icon: Wifi,
+  //   description: 'Manage supported networks',
+  // },
   {
     name: 'API Keys',
     href: '/admin/users-api-keys',
