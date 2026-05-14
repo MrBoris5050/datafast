@@ -246,7 +246,7 @@ export function AdminSidebar({ userName, userEmail, userImage }: AdminSidebarPro
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-gray-900 font-semibold truncate text-xs">{userName || 'Admin User'}</p>
-                  <p className="text-gray-600 text-xs truncate">{userEmail || 'admin@inventordatahub.com'}</p>
+                  <p className="text-gray-600 text-xs truncate">{userEmail || 'admin@datafastbyte.com'}</p>
                 </div>
               </div>
             </div>
