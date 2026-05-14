@@ -13,9 +13,9 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'datafast - Premium Data Purchase Platform',
+  title: 'Datafast - More speed. Less spend. Perfect blend',
   description: 'Buy data bundles for all Ghanaian networks with ease. Fast, secure, and reliable data purchase platform.',
-  keywords: 'data purchase, MTN data, Airtel data, Glo data,   data, Nigeria data bundles',
+  keywords: 'data purchase, MTN data, Airtel data, Tigo data, Glo data,   data, Ghana data bundles',
   icons: {
     icon: '/logo.jpg',
     shortcut: '/logo.jpg',
