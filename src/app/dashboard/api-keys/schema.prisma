@@ -1,0 +1,332 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_PRISMA_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      UserRole @default(CUSTOMER)
+  avatar    String?
+  password  String?
+  phone     String?
+  address   String?
+  walletBalance Decimal @db.Decimal(14,2) @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  orders    Order[]
+  payments  Payment[]
+  dataUsage DataUsage[]
+
+  // Developer integrations
+  apiKeys   APIKey[]
+  webhooks  WebhookSubscription[]
+  
+  // Password reset
+  passwordResets PasswordReset[]
+
+  // Vouchers
+  vouchers        Voucher[]
+  voucherPurchases VoucherPurchase[]
+
+  @@map("users")
+}
+
+model DataPlan {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  priceCustomer   Decimal  @db.Decimal(10, 2) @default(0)
+  priceAgent      Decimal  @db.Decimal(10, 2) @default(0)
+  priceWholesaler Decimal  @db.Decimal(10, 2) @default(0)
+  priceDealer     Decimal  @db.Decimal(10, 2) @default(0)
+  dataAmount  Int      // in MB
+  validity    Int      // in days
+  network     String   // MTN, Airtel, Telecel
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  orders Order[]
+
+  @@map("data_plans")
+}
+
+model Network {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("networks")
+}
+
+model Order {
+  id                String      @id @default(cuid())
+  orderNumber       Int?        @unique // Sequential order number starting from 1
+  userId            String
+  planId            String
+  status            OrderStatus @default(PENDING)
+  amount            Decimal     @db.Decimal(10, 2)
+  phone             String
+  reference         String      @unique
+  providerReference String?     // Reference from VTU provider (e.g., DataHubGH)
+  isManual          Boolean     @default(false) // True if order is processed manually (not via API)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  // Relations
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan     DataPlan @relation(fields: [planId], references: [id])
+  payments Payment[]
+
+  @@map("orders")
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  orderId   String
+  userId    String
+  amount    Decimal       @db.Decimal(10, 2)
+  status    PaymentStatus @default(PENDING)
+  method    String        // paystack, bank_transfer, etc.
+  reference String        @unique
+  gateway   String?       // paystack reference
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model DataUsage {
+  id        String   @id @default(cuid())
+  userId    String
+  phone     String
+  dataUsed  Int      // in MB
+  planName  String
+  network   String
+  usedAt    DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("data_usage")
+}
+
+model Transaction {
+  id          String            @id @default(cuid())
+  userId      String
+  type        TransactionType
+  amount      Decimal           @db.Decimal(10, 2)
+  description String
+  reference   String            @unique
+  status      TransactionStatus @default(PENDING)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@map("transactions")
+}
+
+model APIKey {
+  id         String   @id @default(cuid())
+  userId     String
+  name       String
+  keyHash    String   // hashed API key
+  prefix     String   // public prefix for display
+  lastFour   String   // last 4 for display
+  revoked    Boolean  @default(false)
+  lastUsedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("api_keys")
+  @@index([userId])
+}
+
+model WebhookSubscription {
+  id         String   @id @default(cuid())
+  userId     String
+  url        String
+  secret     String
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("webhook_subscriptions")
+  @@index([userId])
+}
+
+model VtuSource {
+  id        String   @id @default(cuid())
+  name      String
+  provider  String   // e.g., DATAHUBGH
+  baseUrl   String
+  apiKey    String
+  isDefault Boolean  @default(false)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  networkApiSettings NetworkApiSetting[]
+
+  @@map("vtu_sources")
+}
+
+model NetworkApiSetting {
+  id          String     @id @default(cuid())
+  networkName String     @unique // Network name from DataPlan (e.g., "MTN", "AT BIGTIME", "Telecel")
+  vtuKey      String     // VTU provider key (e.g., "YELLO", "AT_BIGTIME", "Telecel")
+  vtuSourceId String?    // Optional: link to VTU source. If null, use manual processing
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  vtuSource VtuSource? @relation(fields: [vtuSourceId], references: [id], onDelete: SetNull)
+
+  @@map("network_api_settings")
+  @@index([networkName])
+}
+
+model PasswordReset {
+  id         String   @id @default(cuid())
+  userId     String
+  method     String   // "email" or "phone"
+  identifier String   // email address or phone number
+  code       String   // 6-digit reset code
+  expiresAt  DateTime
+  used       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_resets")
+  @@index([userId])
+  @@index([identifier, method])
+}
+
+model Voucher {
+  id          String      @id @default(cuid())
+  code        String      @unique // Unique voucher code (auto-generated or uploaded)
+  pin         String?     // PIN from uploaded voucher
+  serial      String?     // Serial number from uploaded voucher
+  type        VoucherType // BECE or WASSCE
+  price       Decimal     @db.Decimal(10, 2) // Price of the voucher
+  isUsed      Boolean     @default(false)
+  isActive    Boolean     @default(true)
+  isSold      Boolean     @default(false) // Mark if voucher is sold
+  userId      String?     // User who purchased/owns the voucher
+  usedAt      DateTime?   // When the voucher was used
+  expiresAt   DateTime?   // Optional expiration date
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  purchases   VoucherPurchase[]
+
+  @@map("vouchers")
+  @@index([userId])
+  @@index([type])
+  @@index([code])
+  @@index([pin])
+  @@index([serial])
+}
+
+model VoucherPurchase {
+  id          String        @id @default(cuid())
+  userId      String
+  voucherId   String
+  amount      Decimal       @db.Decimal(10, 2)
+  status      OrderStatus   @default(PENDING)
+  reference   String        @unique
+  method      String        // wallet, paystack, etc.
+  phoneNumber String?       // Phone number where voucher was sent
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  voucher     Voucher       @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+
+  @@map("voucher_purchases")
+  @@index([userId])
+  @@index([reference])
+}
+
+model VoucherPricing {
+  id          String      @id @default(cuid())
+  type        VoucherType @unique // BECE or WASSCE
+  price       Decimal     @db.Decimal(10, 2) // Default price for this voucher type
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("voucher_pricing")
+  @@index([type])
+}
+
+enum UserRole {
+  CUSTOMER
+  AGENT
+  WHOLESALER
+  DEALER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum TransactionType {
+  PURCHASE
+  REFUND
+  COMMISSION
+  BONUS
+  TOPUP
+  DEBIT
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum VoucherType {
+  BECE
+  WASSCE
+}
