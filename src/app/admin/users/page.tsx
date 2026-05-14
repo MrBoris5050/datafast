@@ -480,7 +480,7 @@ export default function AdminUsersPage() {
             </DialogHeader>
             <div className="py-4">
               <div className="grid grid-cols-1 gap-2">
-                {(['CUSTOMER', 'AGENT', 'WHOLESALER', 'DEALER', 'ADMIN'] as UserRole[]).map((role) => (
+                {(['CUSTOMER', 'AGENT', 'ADMIN'] as UserRole[]).map((role) => (
                   <button
                     key={role}
                     onClick={() => setSelectedRole(role)}
