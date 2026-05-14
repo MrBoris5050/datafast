@@ -1,7 +1,8 @@
 /**
- * GitHub Webhook listener — runs on the VPS (port 9001)
+ * GitHub Webhook listener — runs on the VPS
  * Triggered by a GitHub push event → pulls + rebuilds + reloads PM2
  *
+ * Default port: 9011 (override with WEBHOOK_PORT env var)
  * Set WEBHOOK_SECRET in .env to match the secret you set in GitHub.
  */
 
@@ -9,17 +10,47 @@ const http = require('http')
 const crypto = require('crypto')
 const { execSync } = require('child_process')
 const fs = require('fs')
+const path = require('path')
 
-const PORT = 9001
-const APP_DIR = '/var/www/datafast'
-const LOG_FILE = '/var/log/datafast-deploy.log'
+// Load .env so SECRET / DEPLOY_BRANCH / WEBHOOK_PORT are picked up when run via PM2
+try {
+  const envPath = path.join(__dirname, '..', '.env')
+  if (fs.existsSync(envPath)) {
+    const lines = fs.readFileSync(envPath, 'utf8').split('\n')
+    for (const raw of lines) {
+      const line = raw.trim()
+      if (!line || line.startsWith('#')) continue
+      const eq = line.indexOf('=')
+      if (eq === -1) continue
+      const key = line.slice(0, eq).trim()
+      let value = line.slice(eq + 1).trim()
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1)
+      }
+      if (!(key in process.env)) process.env[key] = value
+    }
+  }
+} catch (_) {
+  // best-effort .env load — ignore failures
+}
+
+const PORT = Number(process.env.WEBHOOK_PORT || 9011)
+const APP_DIR = process.env.APP_DIR || '/var/www/datafast'
+const LOG_FILE = process.env.WEBHOOK_LOG || '/var/log/datafast-deploy.log'
 const BRANCH = process.env.DEPLOY_BRANCH || 'main'
 const SECRET = process.env.WEBHOOK_SECRET || ''
 
 function log(msg) {
   const line = `[${new Date().toISOString()}] ${msg}\n`
   process.stdout.write(line)
-  fs.appendFileSync(LOG_FILE, line)
+  try {
+    fs.appendFileSync(LOG_FILE, line)
+  } catch (_) {
+    // log file might not be writable yet; stdout is enough
+  }
 }
 
 function verifySignature(body, signature) {
@@ -40,7 +71,7 @@ function runDeploy() {
     `cd ${APP_DIR} && git pull origin ${BRANCH}`,
     `cd ${APP_DIR} && npm ci --prefer-offline`,
     `cd ${APP_DIR} && npm run build`,
-    `pm2 reload datafast--update-env`,
+    `pm2 reload datafast --update-env`,
     `pm2 save`,
   ]
 
