@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { usePathname } from 'next/navigation'
@@ -50,13 +50,48 @@ const customerNavItems = [
   { name: 'Profile', href: '/dashboard/profile', icon: UserCheck },
 ]
 
+const DEFAULT_WHATSAPP_URL = 'https://whatsapp.com/channel/0029Vb7pllP7tkjGkUNN6t0N'
+const DEFAULT_SUPPORT_PHONE = '+233(0) 245 757 548'
+
+const toTelHref = (phone: string) => {
+  const trimmed = phone.trim()
+  if (!trimmed) return ''
+  const hasPlus = trimmed.startsWith('+')
+  const digits = trimmed.replace(/\D/g, '')
+  if (!digits) return ''
+  return `tel:${hasPlus ? '+' : ''}${digits}`
+}
+
 export function Sidebar({ userRole, userName, userEmail }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [whatsappUrl, setWhatsappUrl] = useState(DEFAULT_WHATSAPP_URL)
+  const [supportPhone, setSupportPhone] = useState(DEFAULT_SUPPORT_PHONE)
   const pathname = usePathname()
   const router = useRouter()
 
   const { networks } = useNetworks()
   const navItems = customerNavItems
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/settings/contact')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return
+        if (typeof data.whatsappChannelUrl === 'string' && data.whatsappChannelUrl.trim()) {
+          setWhatsappUrl(data.whatsappChannelUrl.trim())
+        }
+        if (typeof data.supportPhone === 'string' && data.supportPhone.trim()) {
+          setSupportPhone(data.supportPhone.trim())
+        }
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const supportPhoneTel = toTelHref(supportPhone)
 
   const handleSignOut = () => {
     signOut({ callbackUrl: '/' })
@@ -293,27 +328,31 @@ export function Sidebar({ userRole, userName, userEmail }: SidebarProps) {
 
           {/* Footer Actions */}
           <div className="p-3 border-t border-gray-200 space-y-0.5">
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl h-10 group"
-              onClick={() => window.open('https://whatsapp.com/channel/0029Vb7pllP7tkjGkUNN6t0N', '_blank', 'noopener,noreferrer')}
-            >
-              <div className="p-1.5 rounded-lg bg-emerald-50 group-hover:bg-emerald-100 transition-colors mr-3">
-                <MessageCircle className="h-4 w-4 text-emerald-600" />
-              </div>
-              <span className="text-sm font-medium">WhatsApp Community</span>
-            </Button>
+            {/* {whatsappUrl && (
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl h-10 group"
+                onClick={() => window.open(whatsappUrl, '_blank', 'noopener,noreferrer')}
+              >
+                <div className="p-1.5 rounded-lg bg-emerald-50 group-hover:bg-emerald-100 transition-colors mr-3">
+                  <MessageCircle className="h-4 w-4 text-emerald-600" />
+                </div>
+                <span className="text-sm font-medium">WhatsApp Community</span>
+              </Button>
+            )} */}
 
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl h-10 group"
-              onClick={() => window.open('tel:+233245757548', '_self')}
-            >
-              <div className="p-1.5 rounded-lg bg-blue-50 group-hover:bg-blue-100 transition-colors mr-3">
-                <Phone className="h-4 w-4 text-blue-600" />
-              </div>
-              <span className="text-sm font-medium">+233(0) 245 757 548</span>
-            </Button>
+            {supportPhone && supportPhoneTel && (
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl h-10 group"
+                onClick={() => window.open(supportPhoneTel, '_self')}
+              >
+                <div className="p-1.5 rounded-lg bg-blue-50 group-hover:bg-blue-100 transition-colors mr-3">
+                  <Phone className="h-4 w-4 text-blue-600" />
+                </div>
+                <span className="text-sm font-medium">{supportPhone}</span>
+              </Button>
+            )}
 
             <Button
               variant="ghost"

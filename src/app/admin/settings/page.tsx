@@ -20,7 +20,8 @@ import {
   MapPin,
   TrendingUp,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  MessageCircle
 } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
@@ -109,6 +110,14 @@ export default function AdminSettingsPage() {
   const [agentUpgradeSaving, setAgentUpgradeSaving] = useState(false)
   const [agentUpgradeSaved, setAgentUpgradeSaved] = useState(false)
 
+  // Contact Info Settings (backed by DB) — used by sidebar
+  const [contactPhone, setContactPhone] = useState('')
+  const [contactWhatsappUrl, setContactWhatsappUrl] = useState('')
+  const [contactLoading, setContactLoading] = useState(true)
+  const [contactSaving, setContactSaving] = useState(false)
+  const [contactSaved, setContactSaved] = useState(false)
+  const [contactError, setContactError] = useState<string | null>(null)
+
   useEffect(() => {
     fetch('/api/admin/settings/agent-upgrade')
       .then(res => res.json())
@@ -117,7 +126,42 @@ export default function AdminSettingsPage() {
         setAgentUpgradePrice(data.price != null ? String(data.price) : '')
       })
       .finally(() => setAgentUpgradeLoading(false))
+
+    fetch('/api/admin/settings/contact')
+      .then(res => res.json())
+      .then(data => {
+        setContactPhone(data.supportPhone ?? '')
+        setContactWhatsappUrl(data.whatsappChannelUrl ?? '')
+      })
+      .finally(() => setContactLoading(false))
   }, [])
+
+  const handleSaveContact = async () => {
+    setContactSaving(true)
+    setContactSaved(false)
+    setContactError(null)
+    try {
+      const res = await fetch('/api/admin/settings/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supportPhone: contactPhone,
+          whatsappChannelUrl: contactWhatsappUrl,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setContactError(data.error || 'Failed to save contact info')
+        return
+      }
+      setContactSaved(true)
+      setTimeout(() => setContactSaved(false), 3000)
+    } catch (err) {
+      setContactError('Network error while saving contact info')
+    } finally {
+      setContactSaving(false)
+    }
+  }
 
   const handleSaveAgentUpgrade = async () => {
     setAgentUpgradeSaving(true)
@@ -142,6 +186,7 @@ export default function AdminSettingsPage() {
     { id: 'features', label: 'Features', icon: Settings },
     // { id: 'payment', label: 'Payment', icon: CreditCard },
     { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'contact', label: 'Contact Info', icon: Phone },
     { id: 'agent-upgrade', label: 'Agent Upgrade', icon: TrendingUp }
   ]
 
@@ -580,6 +625,102 @@ export default function AdminSettingsPage() {
                       />
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {activeTab === 'contact' && (
+              <Card className="bg-gray-100 border-gray-200">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-5 w-5 text-blue-500" />
+                    <CardTitle className="text-gray-900">Contact Info</CardTitle>
+                  </div>
+                  <CardDescription className="text-gray-400">
+                    These values appear in the user sidebar (WhatsApp Community link & support phone button). Leave a field empty to hide it from the sidebar.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {contactLoading ? (
+                    <div className="flex items-center gap-2 text-gray-400 py-4">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm">Loading contact info...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="contactWhatsappUrl" className="text-gray-900">WhatsApp Channel URL</Label>
+                        <p className="text-xs text-gray-400">
+                          The full link to your WhatsApp channel (e.g. https://whatsapp.com/channel/XXXXXXXX).
+                        </p>
+                        <div className="relative">
+                          <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-600" />
+                          <Input
+                            id="contactWhatsappUrl"
+                            type="url"
+                            value={contactWhatsappUrl}
+                            onChange={(e) => setContactWhatsappUrl(e.target.value)}
+                            placeholder="https://whatsapp.com/channel/..."
+                            className="pl-10 bg-white border-gray-200 text-gray-900"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="contactPhone" className="text-gray-900">Support Phone</Label>
+                        <p className="text-xs text-gray-400">
+                          Displayed on the sidebar button. Tapping it opens a phone call to this number.
+                        </p>
+                        <div className="relative">
+                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-600" />
+                          <Input
+                            id="contactPhone"
+                            type="tel"
+                            value={contactPhone}
+                            onChange={(e) => setContactPhone(e.target.value)}
+                            placeholder="+233(0) 245 757 548"
+                            className="pl-10 bg-white border-gray-200 text-gray-900"
+                          />
+                        </div>
+                      </div>
+
+                      {contactError && (
+                        <div className="p-3 rounded-xl bg-red-50 border border-red-100 text-xs text-red-700">
+                          {contactError}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-3">
+                        <Button
+                          onClick={handleSaveContact}
+                          disabled={contactSaving}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          {contactSaving ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-2" />
+                              Save Contact Info
+                            </>
+                          )}
+                        </Button>
+                        {contactSaved && (
+                          <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
+                            <CheckCircle2 className="h-4 w-4" />
+                            Saved successfully
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-blue-50 border border-blue-100 text-xs text-blue-700 leading-relaxed">
+                        <strong>Note:</strong> Changes appear in the sidebar after the next page load. The public endpoint is cached for up to 5 minutes.
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             )}
