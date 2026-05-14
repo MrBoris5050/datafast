@@ -25,12 +25,16 @@ if [ ! -f ".env" ]; then
 fi
 
 # ── Install dependencies ───────────────────────
-echo "[1/4] Installing dependencies..."
-npm ci --prefer-offline
+# Force --include=dev because the build needs Tailwind / PostCSS / TypeScript,
+# which live in devDependencies. NODE_ENV=production on the host would otherwise
+# cause npm ci to skip them and the build fails with "Cannot find module
+# '@tailwindcss/postcss'".
+echo "[1/4] Installing dependencies (incl. devDependencies for the build)..."
+NODE_ENV=development npm ci --include=dev --prefer-offline
 
 # ── Build ─────────────────────────────────────
 echo "[2/4] Building Next.js app..."
-npm run build
+NODE_ENV=production npm run build
 
 # ── Start or restart via PM2 ──────────────────
 echo "[3/4] Starting / restarting PM2 process..."

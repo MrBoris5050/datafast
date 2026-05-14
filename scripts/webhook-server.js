@@ -67,10 +67,14 @@ function verifySignature(body, signature) {
 
 function runDeploy() {
   log('=== Deploy started ===')
+  // Force --include=dev so devDependencies (Tailwind, PostCSS, TypeScript)
+  // are installed for the build step even when NODE_ENV=production is set
+  // on the host. Otherwise the build fails with "Cannot find module
+  // '@tailwindcss/postcss'".
   const steps = [
     `cd ${APP_DIR} && git pull origin ${BRANCH}`,
-    `cd ${APP_DIR} && npm ci --prefer-offline`,
-    `cd ${APP_DIR} && npm run build`,
+    `cd ${APP_DIR} && NODE_ENV=development npm ci --include=dev --prefer-offline`,
+    `cd ${APP_DIR} && NODE_ENV=production npm run build`,
     `pm2 reload datafast --update-env`,
     `pm2 save`,
   ]
