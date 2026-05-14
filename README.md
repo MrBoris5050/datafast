@@ -1,8 +1,7 @@
-<<<<<<< HEAD
-# datafast - Premium Data Purchase Platform
+ HEAD
+# Datafast - Premium Data Purchase Platform
 =======
-# Inventor - Premium Data Purchase Platform
->>>>>>> 17c2f7527330ff389c604082625f8e28e0106a9a
+
 
 A comprehensive data purchase platform built with Next.js 14, TypeScript, and Vercel BaaS. Features separate portals for customers, agents, wholesalers, and administrators with premium UI design.
 
