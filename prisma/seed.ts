@@ -34,12 +34,17 @@ async function main() {
     { name: 'MTN 4GB', dataAmount: 4096 },      // 4GB in MB
     { name: 'MTN 5GB', dataAmount: 5120 },      // 5GB in MB
     { name: 'MTN 6GB', dataAmount: 6144 },      // 6GB in MB
+    { name: 'MTN 7GB', dataAmount: 7168 },      // 7GB in MB
+    { name: 'MTN 8GB', dataAmount: 8192 },      // 8GB in MB
+    { name: 'MTN 9GB', dataAmount: 9216 },      // 9GB in MB
     { name: 'MTN 10GB', dataAmount: 10240 },    // 10GB in MB
     { name: 'MTN 15GB', dataAmount: 15360 },    // 15GB in MB
     { name: 'MTN 20GB', dataAmount: 20480 },    // 20GB in MB
+    { name: 'MTN 25GB', dataAmount: 25600 },    // 25GB in MB
     { name: 'MTN 30GB', dataAmount: 30720 },    // 30GB in MB
     { name: 'MTN 40GB', dataAmount: 40960 },    // 40GB in MB
     { name: 'MTN 50GB', dataAmount: 51200 },    // 50GB in MB
+    { name: 'MTN 100GB', dataAmount: 102400 },  // 100GB in MB
   ]
 
   console.log('Creating MTN data plans...')
@@ -281,3 +286,6 @@ main()
   .finally(async () => {
     await prisma.$disconnect()
   })
+
+
+  // run with: npx prisma db seed

@@ -1167,7 +1167,7 @@ export default function AdminDataPlansPage() {
                         placeholder="e.g., 1GB data valid for 30 days"
                       />
                     </div>
-                    <div className="space-y-2 sm:col-span-2">
+                    {/* <div className="space-y-2 sm:col-span-2">
                       <Label htmlFor="providerPlanId" className="text-gray-600">Provider plan id (DataDash GH)</Label>
                       <Input
                         id="providerPlanId"
@@ -1177,7 +1177,7 @@ export default function AdminDataPlansPage() {
                         className="font-mono text-sm"
                       />
                       <p className="text-xs text-gray-500">Required for automatic fulfillment when the network uses DataDash. From the provider catalog: <code className="text-xs">plan_id</code>.</p>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
 
@@ -1488,7 +1488,7 @@ export default function AdminDataPlansPage() {
                         onChange={(e) => editingPlan && setEditingPlan({...editingPlan, description: e.target.value})}
                       />
                     </div>
-                    <div className="space-y-2 sm:col-span-2">
+                    {/* <div className="space-y-2 sm:col-span-2">
                       <Label htmlFor="edit-providerPlanId" className="text-gray-600">Provider plan id (DataDash GH)</Label>
                       <Input
                         id="edit-providerPlanId"
@@ -1498,7 +1498,7 @@ export default function AdminDataPlansPage() {
                         className="font-mono text-sm"
                       />
                       <p className="text-xs text-gray-500">Maps this bundle to the provider&apos;s <code className="text-xs">plan_id</code> (per network/size in their catalog).</p>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
 
